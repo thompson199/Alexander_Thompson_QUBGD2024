@@ -351,7 +351,10 @@
 -r:"Library/Bee/artifacts/200b0aE.dag/UnityEngine.UI.ref.dll"
 -analyzer:"/Applications/Unity/Hub/Editor/2022.3.26f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll"
 -analyzer:"/Applications/Unity/Hub/Editor/2022.3.26f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll"
+"Assets/Course Library/Scripts/MoveLeft.cs"
 "Assets/Course Library/Scripts/PlayerController.cs"
+"Assets/Course Library/Scripts/RepeatBackground.cs"
+"Assets/Course Library/Scripts/SpawnManager.cs"
 -langversion:9.0
 /deterministic
 /optimize+
