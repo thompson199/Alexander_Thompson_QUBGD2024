@@ -5,33 +5,38 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private Rigidbody playerRb;
+    private GameObject _self;
+    private Rigidbody _playerRb;
     
-    private float playerGroundMoveSpeed = 7.5f;
-    private float playerAirMoveSpeed = 5f;
-    private float playerJumpForce = 22.5f;
+    private float _playerGroundMoveSpeed = 7.5f;
+    private float _playerAirMoveSpeed = 5f;
+    private float _playerJumpForce = 22.5f;
 
-    private bool isOnGround = true;
-    public bool isInBattle = false;
+    private bool _isOnGround = true;
+    private bool _isInBattle = false;
     
     public GameObject battleScreen;
+    
     public int playerHealth = 50;
     public int playerAttack = 15;
     
+    public const int MaxPlayerHealth = 50;
+    
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        playerRb = GetComponent<Rigidbody>();
+        _self = gameObject;
+        _playerRb = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         bool movingLeft = Input.GetKey(KeyCode.LeftArrow);
         bool movingRight = Input.GetKey(KeyCode.RightArrow);
         Vector3 moveDirection = (movingLeft) ? Vector3.left : (movingRight) ? Vector3.right : Vector3.zero;
         
-        if (isInBattle) return;
+        if (_isInBattle) return;
         
         HandleMoveLeftRight(moveDirection); 
         HandleJump();
@@ -40,11 +45,11 @@ public class PlayerController : MonoBehaviour
     private void OnCollisionEnter(Collision other)
     {
         GameObject collidedObject = other.gameObject;
-        Vector3 playerPosition = transform.position;
+        Vector3 playerPosition = _self.transform.position;
 
         if (collidedObject.CompareTag("Ground"))
         {
-            isOnGround = true;
+            _isOnGround = true;
         }
         
         else if (collidedObject.CompareTag("Enemy"))
@@ -55,16 +60,16 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMoveLeftRight(Vector3 playerMoveDirection)
     {
-        float moveSpeed = (isOnGround) ? playerGroundMoveSpeed : playerAirMoveSpeed;
-        transform.Translate(playerMoveDirection * (Time.deltaTime * moveSpeed));
+        float moveSpeed = (_isOnGround) ? _playerGroundMoveSpeed : _playerAirMoveSpeed;
+        transform.Translate(playerMoveDirection * (moveSpeed * Time.deltaTime));
     }
     
     private void HandleJump()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isOnGround)
+        if (Input.GetKeyDown(KeyCode.Space) && _isOnGround)
         {
-            playerRb.AddForce(transform.up * playerJumpForce, ForceMode.Impulse);
-            isOnGround = false;
+            _playerRb.AddForce(_self.transform.up * _playerJumpForce, ForceMode.Impulse);
+            _isOnGround = false;
         }
     }
 
@@ -72,15 +77,22 @@ public class PlayerController : MonoBehaviour
     {
         Debug.Log("Collided With Enemy");
             
-        // Set battle status to true
-        isInBattle = true;
+        // Set battle status to true for player and enemy
+        _isInBattle = true;
+        collidedEnemy.GetComponent<EnemyController>().SetIsInBattle(true);
             
-        // Show battle screen ui element
+        // Show battle screen ui element and set enemy to fight to collided enemy
         battleScreen.SetActive(true);
-        battleScreen.GetComponent<BattleScreenHandler>().player = this;
-        battleScreen.GetComponent<BattleScreenHandler>().enemy = collidedEnemy.GetComponent<EnemyController>();
+        battleScreen.GetComponent<BattleScreenHandler>().SetEnemyToFight(collidedEnemy.GetComponent<EnemyController>());
             
-        // move player away from enemy
-        transform.position = new Vector3(playerPosition.x - 4, playerPosition.y, playerPosition.z);
+        // move player away from enemy, relative to enemy x-position - y and z position unaffected
+        _self.transform.position = new Vector3(collidedEnemy.transform.position.x - 4, playerPosition.y, playerPosition.z);
+        
     }
+
+    public void SetIsInBattle(bool inBattle)
+    {
+        _isInBattle = inBattle;
+    }
+    
 }

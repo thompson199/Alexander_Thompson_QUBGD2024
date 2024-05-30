@@ -1,8 +1,0 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI%20Toolkit/BattleScreenStyle.uss?fileID=7433441132597879392&amp;guid=01b1e9a89dbf2431da715bbc0d9050a4&amp;type=3#BattleScreenStyle" />
-    <ui:VisualElement name="Container" style="flex-grow: 1;">
-        <ui:Button text="Attack" parse-escape-sequences="true" display-tooltip-when-elided="true" name="AttackButton" class="button" />
-        <ui:Button text="Block" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BlockButton" class="button" />
-        <ui:Button text="Run" parse-escape-sequences="true" display-tooltip-when-elided="true" name="RunButton" class="button" />
-    </ui:VisualElement>
-</ui:UXML>

@@ -1,77 +1,108 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class BattleScreenHandler : MonoBehaviour
 {
-    private UIDocument document;
+    private GameObject _self;
+    private PlayerController _player;
+    private EnemyController _enemy;
+    private GameObject _playerHealthBar;
     
-    private Button attackButton;
-    private Button blockButton;
-    private Button runButton;
-
-    public PlayerController player;
-    public EnemyController enemy;
+    private float _origHealthBarWidth;
+    
+    public TextMeshProUGUI playerHealthText;
     
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        document = GetComponent<UIDocument>();
-        InitialiseButtons();
+        _self = gameObject;
+        _player = GameObject.Find("Player").GetComponent<PlayerController>();
+        _playerHealthBar = GameObject.Find("Health Bar Foreground");
+
+        _origHealthBarWidth = _playerHealthBar.GetComponent<RectTransform>().rect.width;
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         
     }
 
-    private void OnDisable()
+    public void SetEnemyToFight(EnemyController enemyToFight)
     {
-        attackButton.UnregisterCallback<ClickEvent>(OnAttackButtonClick);
-        blockButton.UnregisterCallback<ClickEvent>(OnBlockButtonClick);
-        runButton.UnregisterCallback<ClickEvent>(OnRunButtonClick);
+        _enemy = enemyToFight;
     }
-
-    private void InitialiseButtons()
+    
+    public void HandleAttackButton()
     {
-        attackButton = document.rootVisualElement.Q("AttackButton") as Button;
-        attackButton.RegisterCallback<ClickEvent>(OnAttackButtonClick);
-        
-        blockButton = document.rootVisualElement.Q("BlockButton") as Button;
-        blockButton.RegisterCallback<ClickEvent>(OnBlockButtonClick);
-        
-        runButton = document.rootVisualElement.Q("RunButton") as Button;
-        runButton.RegisterCallback<ClickEvent>(OnRunButtonClick);
-    }
-
-    private void OnAttackButtonClick(ClickEvent evt)
-    {
-        
-        if (enemy.enemyHealth < player.playerAttack)
+        if (_enemy.enemyHealth <= _player.playerAttack)
         {
             Debug.Log("You defeated the enemy");
             Destroy(GameObject.Find("Enemy"));
-            gameObject.SetActive(false);
-            player.isInBattle = false;
+            HideBattleScreen();
+            _player.SetIsInBattle(false);
         }
         else
         {
-            Debug.Log("You damaged the enemy for " + player.playerAttack + " points - Enemy Health = " + (enemy.enemyHealth - player.playerAttack));
-            enemy.enemyHealth -= player.playerAttack;
+            _enemy.enemyHealth -= _player.playerAttack;
+            Debug.Log($"Damaged enemy for {_player.playerAttack} points");
+            ActivateEnemyTurn(false);
         }
+    }
+
+    public void HandleBlockButton()
+    {
+        Debug.Log("Pressed the block button");
+        ActivateEnemyTurn(true);
+    }
+
+    public void HandleFleeButton()
+    {
+        Debug.Log("You have fled from the battle");
+        // Hide the battle screen
+        HideBattleScreen();
         
+        // set the player isInBattle status to false
+        _player.SetIsInBattle(false);
+    }
+
+    private void ActivateEnemyTurn(bool playerIsBlocking)
+    {
+        int damageFromEnemy = (playerIsBlocking) ? (_enemy.enemyAttack / 2) : _enemy.enemyAttack;
+        
+        // any possible future modifications/checks regarding enemy damage - e.g. status effects etc.
+
+        _player.playerHealth -= damageFromEnemy;
+        Debug.Log($"Enemy attacked for {damageFromEnemy} points");
+        
+        UpdatePlayerHealthBar(damageFromEnemy);
+        UpdatePlayerHealthText();
+    }
+
+    private void UpdatePlayerHealthBar(int damageFromEnemy)
+    {
+        RectTransform healthBarRectTransform = _playerHealthBar.GetComponent<RectTransform>();
+        Rect healthBarRect = healthBarRectTransform.rect;
+        Vector3 healthBarPos = healthBarRectTransform.position;
+
+        float sizeReduction = _origHealthBarWidth * ((float) damageFromEnemy / PlayerController.MaxPlayerHealth);
+        
+        Vector2 updatedHealthBarSize = new Vector2(healthBarRect.width - sizeReduction, healthBarRect.height);
+        Vector3 updatedHealthBarPosition = new Vector3(healthBarPos.x - (sizeReduction / 2), healthBarPos.y, healthBarPos.z);
+        
+        healthBarRectTransform.sizeDelta = updatedHealthBarSize;
+        healthBarRectTransform.position = updatedHealthBarPosition;
+    }
+
+    private void UpdatePlayerHealthText()
+    {
+        playerHealthText.text = $"{_player.playerHealth}/{PlayerController.MaxPlayerHealth}";
     }
     
-    private void OnBlockButtonClick(ClickEvent evt)
+    private void HideBattleScreen()
     {
-        Debug.Log("You pressed the Block Button");
-    }
-    
-    private void OnRunButtonClick(ClickEvent evt)
-    {
-        Debug.Log("You pressed the Run Button");
+        _self.SetActive(false);
     }
 }
