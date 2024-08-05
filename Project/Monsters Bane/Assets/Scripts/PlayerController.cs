@@ -5,8 +5,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private GameObject _self;
+    private GameObject _playerObj;
     private Rigidbody _playerRb;
+    private Animator _playerAnim;
     
     private float _playerGroundMoveSpeed = 7.5f;
     private float _playerAirMoveSpeed = 5f;
@@ -14,38 +15,37 @@ public class PlayerController : MonoBehaviour
 
     private bool _isOnGround = true;
     private bool _isInBattle = false;
+    private bool _isFacingRight = true;
+    
+    private int _playerHealth = 50;
+    private int _playerAttack = 15;
+    
+    private const int _maxPlayerHealth = 50;
+    private static readonly int SpeedF = Animator.StringToHash("Speed_f");
     
     public GameObject battleScreen;
-    
-    public int playerHealth = 50;
-    public int playerAttack = 15;
-    
-    public const int MaxPlayerHealth = 50;
-    
+
     // Start is called before the first frame update
     private void Start()
     {
-        _self = gameObject;
+        _playerObj = gameObject;
         _playerRb = GetComponent<Rigidbody>();
+        _playerAnim = GetComponentInChildren<Animator>();
     }
 
     // Update is called once per frame
     private void Update()
     {
-        bool movingLeft = Input.GetKey(KeyCode.LeftArrow);
-        bool movingRight = Input.GetKey(KeyCode.RightArrow);
-        Vector3 moveDirection = (movingLeft) ? Vector3.left : (movingRight) ? Vector3.right : Vector3.zero;
-        
         if (_isInBattle) return;
         
-        HandleMoveLeftRight(moveDirection); 
+        HandleMoveLeftRight(); 
         HandleJump();
     }
 
     private void OnCollisionEnter(Collision other)
     {
         GameObject collidedObject = other.gameObject;
-        Vector3 playerPosition = _self.transform.position;
+        Vector3 playerPosition = _playerObj.transform.position;
 
         if (collidedObject.CompareTag("Ground"))
         {
@@ -58,17 +58,36 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void HandleMoveLeftRight(Vector3 playerMoveDirection)
+    private void HandleMoveLeftRight()
     {
-        float moveSpeed = (_isOnGround) ? _playerGroundMoveSpeed : _playerAirMoveSpeed;
-        transform.Translate(playerMoveDirection * (moveSpeed * Time.deltaTime));
+        float movementDirection = Input.GetAxisRaw("Horizontal");
+        float movementSpeed = (_isOnGround) ? _playerGroundMoveSpeed : _playerAirMoveSpeed;
+        Vector3 movementVector = (_isFacingRight) ? Vector3.right : Vector3.left;
+        
+        // Change direction player is facing based on movement
+        if (movementDirection < 0 && _isFacingRight)
+        {
+            _playerObj.transform.Rotate(new Vector3(0, 180, 0));
+            _isFacingRight = false;
+        } 
+        else if (movementDirection > 0 && !_isFacingRight)
+        {
+            _playerObj.transform.Rotate(new Vector3(0, -180, 0));
+            _isFacingRight = true;
+        }
+        
+        // Adjust run animation parameter
+        _playerAnim.SetFloat(SpeedF, Mathf.Abs(movementDirection)); 
+        
+        // move player
+        transform.Translate(movementVector * (movementDirection * (movementSpeed * Time.deltaTime)));
     }
     
     private void HandleJump()
     {
         if (Input.GetKeyDown(KeyCode.Space) && _isOnGround)
         {
-            _playerRb.AddForce(_self.transform.up * _playerJumpForce, ForceMode.Impulse);
+            _playerRb.AddForce(_playerObj.transform.up * _playerJumpForce, ForceMode.Impulse);
             _isOnGround = false;
         }
     }
@@ -77,6 +96,9 @@ public class PlayerController : MonoBehaviour
     {
         Debug.Log("Collided With Enemy");
             
+        // Stop player movement animations
+        _playerAnim.SetFloat(SpeedF, 0f);
+        
         // Set battle status to true for player and enemy
         _isInBattle = true;
         collidedEnemy.GetComponent<EnemyController>().SetIsInBattle(true);
@@ -86,7 +108,7 @@ public class PlayerController : MonoBehaviour
         battleScreen.GetComponent<BattleScreenHandler>().SetEnemyToFight(collidedEnemy.GetComponent<EnemyController>());
             
         // move player away from enemy, relative to enemy x-position - y and z position unaffected
-        _self.transform.position = new Vector3(collidedEnemy.transform.position.x - 4, playerPosition.y, playerPosition.z);
+        _playerObj.transform.position = new Vector3(collidedEnemy.transform.position.x - 4, playerPosition.y, playerPosition.z);
         
     }
 
@@ -95,4 +117,25 @@ public class PlayerController : MonoBehaviour
         _isInBattle = inBattle;
     }
     
+    public void SetPlayerHealth(int newPlayerHealth)
+    {
+        if (newPlayerHealth is < 0 or > _maxPlayerHealth) return;
+
+        _playerHealth = newPlayerHealth;
+    }
+
+    public int GetPlayerHealth()
+    {
+        return _playerHealth;
+    }
+
+    public int GetMaxPlayerHealth()
+    {
+        return _maxPlayerHealth;
+    }
+
+    public int GetPlayerAttack()
+    {
+        return _playerAttack;
+    }
 }
