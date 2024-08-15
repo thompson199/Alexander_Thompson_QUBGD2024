@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviour
     private bool _isOnGround = true;
     private bool _isInBattle = false;
     private bool _isFacingRight = true;
+    private bool _isTouchingObstacle = false;
     
     private int _playerHealth = 50;
     private int _playerAttack = 15;
@@ -46,15 +47,30 @@ public class PlayerController : MonoBehaviour
     {
         GameObject collidedObject = other.gameObject;
         Vector3 playerPosition = _playerObj.transform.position;
-
+        
         if (collidedObject.CompareTag("Ground"))
         {
             _isOnGround = true;
+        }
+
+        if (collidedObject.CompareTag("Obstacle"))
+        {
+            _isTouchingObstacle = true;
         }
         
         else if (collidedObject.CompareTag("Enemy"))
         {
             HandleEnemyCollision(playerPosition, collidedObject);
+        }
+    }
+
+    private void OnCollisionExit(Collision other)
+    {
+        GameObject collidedObject = other.gameObject;
+        
+        if (collidedObject.CompareTag("Obstacle"))
+        {
+            _isTouchingObstacle = false;
         }
     }
 
@@ -85,7 +101,7 @@ public class PlayerController : MonoBehaviour
     
     private void HandleJump()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && _isOnGround)
+        if (Input.GetKeyDown(KeyCode.Space) && (_isOnGround || (!_isOnGround && _isTouchingObstacle && _playerRb.velocity.y == 0)))
         {
             _playerRb.AddForce(_playerObj.transform.up * _playerJumpForce, ForceMode.Impulse);
             _isOnGround = false;
@@ -124,6 +140,11 @@ public class PlayerController : MonoBehaviour
         _playerHealth = newPlayerHealth;
     }
 
+    public bool GetIsPlayerTouchingObstacle()
+    {
+        return _isTouchingObstacle;
+    }
+    
     public int GetPlayerHealth()
     {
         return _playerHealth;
